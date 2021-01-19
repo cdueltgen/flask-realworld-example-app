@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """The app module, containing the app factory function."""
+import os
+
+import beeline
+from beeline.middleware.flask import HoneyMiddleware
 from flask import Flask
+
 from conduit.extensions import bcrypt, cache, db, migrate, jwt, cors
 
 from conduit import commands, user, profile, articles
 from conduit.settings import ProdConfig
 from conduit.exceptions import InvalidUsage
-
 
 def create_app(config_object=ProdConfig):
     """An application factory, as explained here:
@@ -14,7 +18,10 @@ def create_app(config_object=ProdConfig):
 
     :param config_object: The configuration object to use.
     """
+    beeline.init(writekey=os.environ.get('HONEYCOMB_API_KEY'), dataset="conduit", service_name="conduit", debug=True)
+
     app = Flask(__name__.split('.')[0])
+    HoneyMiddleware(app, db_events=True)
     app.url_map.strict_slashes = False
     app.config.from_object(config_object)
     register_extensions(app)

@@ -2,6 +2,7 @@
 
 import datetime as dt
 
+import beeline
 from flask import Blueprint, jsonify
 from flask_apispec import marshal_with, use_kwargs
 from flask_jwt_extended import current_user, jwt_required, jwt_optional
@@ -40,6 +41,7 @@ def get_articles(tag=None, author=None, favorited=None, limit=20, offset=0):
 @jwt_required
 @use_kwargs(article_schema)
 @marshal_with(article_schema)
+@beeline.traced(name='article_post')
 def make_article(body, title, description, tagList=None):
     article = Article(title=title, description=description, body=body,
                       author=current_user.profile)
@@ -140,6 +142,7 @@ def get_comments(slug):
     article = Article.query.filter_by(slug=slug).first()
     if not article:
         raise InvalidUsage.article_not_found()
+    beeline.add_field("comment_count", article.comments.count())
     return article.comments
 
 
